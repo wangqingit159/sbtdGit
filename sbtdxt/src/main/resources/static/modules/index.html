@@ -1,0 +1,208 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="../asset/css/reset.css" rel="stylesheet" type="text/css">
+    <link href="../asset/css/master.css" rel="stylesheet" type="text/css">
+    <link href="../asset/css/menu.css" rel="stylesheet" type="text/css">
+    <link href="../asset/css/setpage.css" rel="stylesheet" type="text/css">
+    <link href="../asset/css/trim.css" rel="stylesheet" type="text/css">
+    <link href="../asset/css/index.css" rel="stylesheet" type="text/css">
+
+    <script type="text/javascript" src="../asset/js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="../asset/js/placeholder.js"></script>
+    <script type="text/javascript" src="/asset/js/jquery.cookie.js"></script>
+    <link rel="stylesheet" type="text/css" href="../asset/jquery-easyui-1.5/themes/bootstrap/easyui.css"/>
+    <link rel="stylesheet" type="text/css" href="../asset/jquery-easyui-1.5/themes/icon.css"/>
+
+    <script type="text/javascript" src="../asset/jquery-easyui-1.5/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../asset/jquery-easyui-1.5/locale/easyui-lang-zh_CN.js"></script>
+    <script type="text/javascript" src="../asset/js/forminit.js"></script>
+</head>
+<body>
+<div style="top: 10px;">
+    <div style="padding: 5px;">
+        <form id="fkexport_form">
+            <table border="0" cellspacing="5" class="padding10">
+                <tr>
+                    <td align="center">&nbsp;&nbsp;&nbsp;&nbsp;海关企业代码：</td>
+                    <td>
+                        <input id="query_hgqydm" name="query_hgqydm" class="easyui-textbox" style="width: 200px;height:28px" value=""/>
+                    </td>
+                    <td align="center">&nbsp;&nbsp;&nbsp;&nbsp;申报年月：</td>
+                    <td>
+                        <input id="query_sbny" name="query_sbny" class="easyui-textbox" style="width: 75px;height:28px" value=""/>
+                    </td>
+                    <td align="center">&nbsp;&nbsp;&nbsp;&nbsp;批次：</td>
+                    <td>
+                        <input id="query_pc" name="query_pc" class="easyui-textbox" style="width: 75px;height:28px" value=""/>
+                    </td>
+                    <td>&nbsp;&nbsp;&nbsp;&nbsp;发送状态：</td>
+                    <td>
+                        <select id="query_type" name="query_type" class="easyui-combobox" data-options="width:80,height:28">
+                            <option value="9" selected="selected"></option>
+                            <option value="0" >未发送</option>
+                            <option value="1" >已发送</option>
+                        </select>
+                    </td>
+                    &nbsp;&nbsp;
+                    <td align="center">
+                        &nbsp;&nbsp;<a id="fkexport_search" class="easyui-linkbutton" data-options="iconCls:'icon-search'"
+                                       onclick="fkexport_search()">查询</a>
+                    </td>
+                    &nbsp;&nbsp;
+                    <td align="center">0_XIHCtizyo7kew3_mGtgyj9HPoCWum1htkqUSqtKlCogDUcWlcQiU_mPKFtqjeL
+                        &nbsp;&nbsp;<a id="add_cm" class="easyui-linkbutton" data-options="iconCls:'icon-search'"
+                                       onclick="add_cm()">查询</a>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+
+    <div class="easyui-layout" data-options="fit:true,border:false" style="height: 600px">
+        <div  data-options="region:'center',title:'申报数据列表'" >
+            <table id="fkexport_table">
+
+            </table>
+        </div>
+
+    </div>
+    <div id="body">
+
+    </div>
+</div>
+
+
+<script type="text/javascript">
+    var fkexport_table_datagrid = $("#fkexport_table").datagrid({
+        url: "/sbtd/sbSearch",
+        method: "POST",
+        columns: [
+            [
+                {field: "id", title: "", width: 100, align: "center", hidden:true},
+                {field: "hgqydm", title: "海关企业代码", width: 100},
+                {field: "sbny", title: "申报年月", width: 50},
+                {field: "pc", title: "批次", width: 50},
+                {field: "filename", title: "申报文件名称", width: 200},
+                {field: "sbsj", title: "申报时间", width: 200},
+                {field:"fszt", title:"发送状态", width:50, align:"left", formatter:formatFszt},
+                {field:"operate", title:"操作", width:50, align:"left", formatter:formatOperate}
+            ]
+        ],
+        loadMsg: "数据加载中...",
+        border: false,
+        pagination: true,
+        pagePosition: 'bottom',
+        pageSize: 20,
+        pageList: [20,30,50],
+        idField: 'id',
+        height: '100%',
+        rownumbers: false,
+        fitColumns: true,
+        onLoadSuccess: function (data) {
+
+        }
+    });
+    /* 格式化操作 */
+    function formatFszt(rowData, value, rowIndex)
+    {
+        var fszt = value.fszt;
+        if(fszt==0){
+            str = '未发送';
+        }else{
+            str = '已发送';
+        }
+        return str ;
+    }
+    function formatOperate(rowData, value, rowIndex)
+    {
+        var id = value.id;
+        var fszt = value.fszt;
+        if(fszt==0){
+            str = '<a href="#" name="opera" class="easyui-linkbutton" onclick="againSend(\'' + id + '\')">[重发]</a>';
+        }else{
+            str = '[已发送]';
+        }
+        return str ;
+    }
+    function againSend(id){
+        ajaxLoadStart();
+        $("#fkexport_table").load("/sbtd/againSend?id="+id+"&date="+new Date().getTime(),function(data){
+            if(data.resultFlag == 1){
+                ajaxLoadEnd();
+                showSuccess();
+                fkexport_search();
+            }else{
+                ajaxLoadEnd();
+                showException();
+            }
+        })
+
+       }
+
+    function fkexport_search() {
+        var hgqydm = $("#fkexport_form input[textboxname=query_hgqydm]").textbox("getText");
+        var sbny = $("#fkexport_form input[textboxname=query_sbny]").textbox("getText");
+        var pc = $("#fkexport_form input[textboxname=query_pc]").textbox("getText");
+        var fszt = $("#fkexport_form select[textboxname=query_type]").textbox("getValue");
+        if(hgqydm == null){
+            hgqydm="";
+        }
+        if (pc == null) {
+            pc = "";
+        }
+        if (sbny == null) {
+            sbny = "";
+        }
+        var param = { hgqydm:hgqydm,sbny: sbny, pc: pc,fszt:fszt};
+        fkexport_table_datagrid.datagrid("load", param);
+    }
+    /**
+     * 显示操作成功信息
+     */
+    function showSuccess()
+    {
+        $.messager.show({
+            title:"成功",
+            msg:"操作成功！",
+            showSpeed:500,
+            timeout:5000
+        });
+    }
+    /**
+     * 显示操作异常信息
+     */
+    function showException()
+    {
+        $.messager.show({
+            title:"异常",
+            msg:"操作异常！",
+            showSpeed:500,
+            timeout:5000
+        });
+    }
+
+    function ajaxLoadStart() {
+        $("<div class=\"datagrid-mask\"></div>").css({
+            display: "block",
+            width: "100%",
+            height: $(window).height()
+        }).appendTo("body");
+        $("<div class=\"datagrid-mask-msg\"></div>").html("正在处理，请稍候。。。").appendTo("body").css({
+            display: "block",
+            left: ($(document.body).outerWidth(true) - 190) / 2,
+            top: ($(window).height() - 45) / 2
+        });
+    }
+    function ajaxLoadEnd() {
+        $(".datagrid-mask").remove();
+        $(".datagrid-mask-msg").remove();
+    }
+
+
+</script>
+</body>
+
+</html>
